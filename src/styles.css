@@ -1,4 +1,72 @@
 @import "tailwindcss";
+.cultiva-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  white-space: nowrap;
+}
+.cultiva-brand > svg {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.cultiva-wordmark {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.cultiva-brand .cultiva-wordmark small {
+  display: block;
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  font-weight: 400;
+  color: var(--muted);
+  margin: 6px 0 0 2px;
+}
+.cultiva-brand.compact {
+  gap: 7px;
+}
+.cultiva-brand.compact > svg {
+  width: 24px;
+  height: 24px;
+}
+.cultiva-brand.compact .cultiva-wordmark {
+  font-size: 21px;
+}
+.topbar-brand {
+  display: none;
+}
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+footer .cultiva-brand.compact .cultiva-wordmark {
+  font-size: 16px;
+}
+footer .cultiva-brand.compact > svg {
+  width: 19px;
+  height: 19px;
+}
+@media (max-width: 760px) {
+  .topbar-brand {
+    display: flex;
+    margin-right: auto;
+    margin-left: 8px;
+  }
+  .topbar-brand .cultiva-wordmark {
+    font-size: 22px;
+  }
+  .topbar-brand .cultiva-brand > svg {
+    width: 28px;
+    height: 28px;
+  }
+}
 .calendar-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(230px, 1fr);

@@ -1,4 +1,6 @@
-# Juntos em Equilíbrio
+# Cultiva
+
+Crescer, juntos. Identidade com duas folhas conectadas, disponível em `public/logo.svg`; o símbolo também aparece na interface e nos ícones da PWA.
 
 Aplicação estática React + TypeScript para hábitos pessoais e compartilhados. Metas definem quantidade e periodicidade; agenda opcional define intenção de data; registros guardam o que aconteceu. Nenhuma atividade é distribuída automaticamente pela semana.
 
@@ -51,7 +53,7 @@ Não há backend privilegiado para vinculação: a autorização acontece no bac
 | `invitations/{token}`   | E-mail destinatário, expiração e estado; proprietário e destinatário verificado.                                                                                       |
 | `goals/{id}`            | Quantidade, período, categoria, tipo, favorita e arquivo. Pessoais privadas; paralelas e compartilhadas visíveis ao casal. Apenas criador edita.                       |
 | `activityLogs/{id}`     | Atividades, estudos profundos e ministério. Registros pessoais e paralelos privados; registros de metas compartilhadas visíveis ao casal. Apenas criador pode excluir. |
-| `plans/{id}`            | Calendário privado ou compartilhado com participantes e início/término. Apenas criador edita ou exclui.                                                                                                        |
+| `plans/{id}`            | Calendário privado ou compartilhado com participantes e início/término. Apenas criador edita ou exclui.                                                                |
 | `sharedNotes/{id}`      | Notas, refeições, compras, revisão mensal e categorias personalizadas. Compartilhamento explícito. Criador edita/exclui.                                               |
 | `referenceLibrary/{id}` | Links oficiais salvos pelo titular. Referências iniciais públicas ficam no código, sem cópia de publicações.                                                           |
 

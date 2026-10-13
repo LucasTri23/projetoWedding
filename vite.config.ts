@@ -35,10 +35,10 @@ export default defineConfig(({ mode }) => {
       tailwind(),
       VitePWA({
         registerType: "prompt",
-        includeAssets: ["icon.svg", "icon-192.png", "icon-512.png"],
+        includeAssets: ["logo.svg", "icon.svg", "icon-192.png", "icon-512.png"],
         manifest: {
-          name: "Juntos em Equilíbrio",
-          short_name: "Juntos",
+          name: "Cultiva",
+          short_name: "Cultiva",
           lang: "pt-BR",
           description: "Bons hábitos, no nosso ritmo.",
           theme_color: "#284e45",

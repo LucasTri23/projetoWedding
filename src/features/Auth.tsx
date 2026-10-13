@@ -6,11 +6,12 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { Heart, ArrowRight, Leaf, ShieldCheck } from "lucide-react";
+import { ArrowRight, Leaf, ShieldCheck } from "lucide-react";
 import { auth, configured } from "../lib/firebase";
 import { ensureProfile } from "../lib/service";
 import { useData } from "../lib/context";
 import { Field } from "../components/ui";
+import { Brand } from "../components/Brand";
 export function Auth() {
   const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
   const [name, setName] = useState("");
@@ -61,7 +62,7 @@ export function Auth() {
     <main className="auth-page">
       <section className="auth-story">
         <div className="brand">
-          <Heart /> juntos <span>em equilíbrio</span>
+          <Brand />
         </div>
         <div>
           <span className="eyebrow">UMA VIDA COM MAIS PROPÓSITO</span>
@@ -91,7 +92,7 @@ export function Auth() {
       </section>
       <section className="auth-form">
         <div className="auth-card">
-          <span className="eyebrow">JUNTOS EM EQUILÍBRIO</span>
+          <span className="eyebrow">CULTIVA</span>
           <h2>
             {mode === "signup"
               ? "Vamos começar?"

@@ -16,18 +16,90 @@ function chunk(type, data) {
   crc.writeUInt32BE(crc32(Buffer.concat([t, data])));
   return Buffer.concat([size, t, data, crc]);
 }
+function curve(start, a, b, end) {
+  return Array.from({ length: 21 }, (_, i) => {
+    const t = i / 20,
+      u = 1 - t;
+    return [
+      u ** 3 * start[0] +
+        3 * u * u * t * a[0] +
+        3 * u * t * t * b[0] +
+        t ** 3 * end[0],
+      u ** 3 * start[1] +
+        3 * u * u * t * a[1] +
+        3 * u * t * t * b[1] +
+        t ** 3 * end[1],
+    ];
+  });
+}
+const left = [
+  ...curve([32, 43], [13, 43], [12, 25], [14, 18]),
+  ...curve([14, 18], [32, 18], [34, 30], [32, 43]),
+];
+const right = [
+  ...curve([32, 35], [32, 16], [46, 13], [51, 13]),
+  ...curve([51, 13], [52, 31], [42, 37], [32, 35]),
+];
+function inside(x, y, points) {
+  let result = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [a, b] = points[i],
+      [c, d] = points[j];
+    if (b > y !== d > y && x < ((c - a) * (y - b)) / (d - b) + a)
+      result = !result;
+  }
+  return result;
+}
+function distance(x, y, a, b) {
+  const dx = b[0] - a[0],
+    dy = b[1] - a[1];
+  const t = Math.max(
+    0,
+    Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy)),
+  );
+  return Math.hypot(x - a[0] - t * dx, y - a[1] - t * dy);
+}
+const stems = [
+  [
+    [32, 49],
+    [32, 32],
+  ],
+  [
+    [32, 42],
+    [22, 29],
+  ],
+  [
+    [32, 34],
+    [43, 23],
+  ],
+];
+function color(x, y) {
+  const cx = Math.max(17, Math.min(47, x)),
+    cy = Math.max(17, Math.min(47, y));
+  if (Math.hypot(x - cx, y - cy) > 17) return [0, 0, 0, 0];
+  if (stems.some(([a, b]) => distance(x, y, a, b) <= 1.25))
+    return [244, 246, 237, 255];
+  if (inside(x, y, right)) return [224, 217, 180, 255];
+  if (inside(x, y, left)) return [187, 207, 171, 255];
+  return [40, 78, 69, 255];
+}
 for (const size of [192, 512]) {
   const pixels = Buffer.alloc((size * 4 + 1) * size);
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
-      const nx = (x / size - 0.5) * 2.5;
-      const ny = -(y / size - 0.46) * 2.5;
-      const heart = (nx * nx + ny * ny - 0.36) ** 3 - nx * nx * ny ** 3 <= 0;
       const i = y * (size * 4 + 1) + 1 + x * 4;
-      pixels[i] = heart ? 219 : 40;
-      pixels[i + 1] = heart ? 232 : 78;
-      pixels[i + 2] = heart ? 201 : 69;
-      pixels[i + 3] = 255;
+      const samples = [
+        color(((x + 0.25) / size) * 64, ((y + 0.25) / size) * 64),
+        color(((x + 0.75) / size) * 64, ((y + 0.25) / size) * 64),
+        color(((x + 0.25) / size) * 64, ((y + 0.75) / size) * 64),
+        color(((x + 0.75) / size) * 64, ((y + 0.75) / size) * 64),
+      ];
+      const opaque = samples.filter((s) => s[3]);
+      for (let c = 0; c < 3; c++)
+        pixels[i + c] = opaque.length
+          ? Math.round(opaque.reduce((sum, s) => sum + s[c], 0) / opaque.length)
+          : 0;
+      pixels[i + 3] = Math.round((opaque.length / 4) * 255);
     }
   const header = Buffer.alloc(13);
   header.writeUInt32BE(size);

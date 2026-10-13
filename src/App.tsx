@@ -9,7 +9,6 @@ import {
   ChartNoAxesCombined,
   NotebookPen,
   UserRound,
-  Heart,
   Plus,
   Moon,
   Sun,
@@ -29,6 +28,7 @@ import { updateApp } from "./lib/pwa";
 import { signOut } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import { Modal } from "./components/ui";
+import { Brand } from "./components/Brand";
 const links = [
   { to: "/", label: "Visão geral", icon: LayoutDashboard },
   { to: "/habitos", label: "Hábitos & metas", icon: Sprout },
@@ -109,12 +109,7 @@ export default function App() {
       <div className="app-shell">
         <aside className="sidebar">
           <NavLink className="brand" to="/">
-            <span className="brand-icon">
-              <Heart size={23} />
-            </span>
-            <span>
-              juntos<small>em equilíbrio</small>
-            </span>
+            <Brand />
           </NavLink>
           <span className="nav-caption">NOSSO ESPAÇO</span>
           <nav aria-label="Navegação principal">
@@ -152,6 +147,13 @@ export default function App() {
               <Menu size={21} />
             </button>
             <span className="topbar-label">Um pouco melhor, juntos.</span>
+            <NavLink
+              className="topbar-brand"
+              to="/"
+              aria-label="Cultiva, início"
+            >
+              <Brand compact />
+            </NavLink>
             <div>
               <button
                 className="icon-button"
@@ -228,7 +230,7 @@ export default function App() {
               </Routes>
             </Suspense>
             <footer>
-              Juntos em Equilíbrio <span>·</span> Cultivando uma vida com
+              <Brand compact /> <span>·</span> Cultivando uma vida com
               propósito.
             </footer>
           </main>
