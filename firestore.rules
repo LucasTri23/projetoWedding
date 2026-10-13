@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function member(c) { return signed() && c is string && uid() in get(/databases/$(database)/documents/couples/$(c)).data.memberIds; }
+    function mine(d) { return signed() && d.ownerId == uid(); }
+    function timestamps(d) { return d.createdAt is timestamp && d.updatedAt == request.time; }
+    function identity(d,id) { return d.id == id && d.ownerId == uid() && timestamps(d); }
+    function unchanged() { return request.resource.data.id == resource.data.id && request.resource.data.ownerId == resource.data.ownerId && request.resource.data.coupleId == resource.data.coupleId && request.resource.data.createdAt == resource.data.createdAt; }
+    function text(t,max) { return t is string && t.size() <= max; }
+    function date(d) { return d is string && d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function visibility(d) { return (d.visibility == 'private' && d.coupleId == null) || (d.visibility == 'couple' && member(d.coupleId)); }
+    function readable(d) { return mine(d) || (d.visibility == 'couple' && member(d.coupleId)); }
+    function joining(c) { return getAfter(/databases/$(database)/documents/couples/$(c)).data.memberIds.hasAny([uid()]); }
+    function profile(d,id) { return d.keys().hasOnly(['id','ownerId','name','photo','coupleId','ministryMode','ministryTarget','annualTarget','theme','timezone','createdAt','updatedAt']) && d.id == id && d.ownerId == id && text(d.name,80) && d.name.size()>0 && text(d.photo,2000) && (d.photo == '' || d.photo.matches('^https://.*')) && d.ministryMode in ['Publicador','Pioneiro regular','Pioneiro auxiliar','Meta personalizada'] && d.ministryTarget is number && d.ministryTarget >= 0 && d.ministryTarget <= 744 && d.annualTarget is number && d.annualTarget >= 0 && d.annualTarget <= 8760 && d.theme in ['light','dark'] && d.timezone in ['America/Sao_Paulo','America/Manaus','America/Belem','America/Rio_Branco','Europe/Lisbon','UTC'] && timestamps(d); }
+    match /users/{id} {
+      allow read: if signed() && id == uid();
+      allow create: if signed() && id == uid() && profile(request.resource.data,id) && request.resource.data.coupleId == null && request.resource.data.createdAt == request.time;
+      allow update: if signed() && id == uid() && profile(request.resource.data,id) && request.resource.data.createdAt == resource.data.createdAt && (request.resource.data.coupleId == resource.data.coupleId || (resource.data.coupleId == null && request.resource.data.coupleId is string && joining(request.resource.data.coupleId)));
+    }
+    function validCouple(d,id) { return d.keys().hasOnly(['id','ownerId','memberIds','names','invitationId','createdAt','updatedAt']) && d.id==id && d.memberIds is list && d.memberIds.size()>=1 && d.memberIds.size()<=2 && d.memberIds.toSet().size()==d.memberIds.size() && d.ownerId in d.memberIds && d.names is map && d.names.keys().hasOnly(d.memberIds) && d.names.keys().hasAll(d.memberIds) && timestamps(d); }
+    function accept(c,id) {
+      let before = get(/databases/$(database)/documents/invitations/$(c.invitationId)).data;
+      let after = getAfter(/databases/$(database)/documents/invitations/$(c.invitationId)).data;
+      return signed() && request.auth.token.email_verified == true && before.coupleId == id && before.status == 'pending' && before.expiresAt > request.time && before.recipientEmail == request.auth.token.email.lower() && after.status == 'accepted' && after.acceptedBy == uid() && get(/databases/$(database)/documents/users/$(uid())).data.coupleId == null && getAfter(/databases/$(database)/documents/users/$(uid())).data.coupleId == id;
+    }
+    match /couples/{id} {
+      allow list: if signed() && uid() in resource.data.memberIds;
+      allow get: if signed() && (uid() in resource.data.memberIds || (request.auth.token.email_verified == true && resource.data.invitationId is string && get(/databases/$(database)/documents/invitations/$(resource.data.invitationId)).data.recipientEmail == request.auth.token.email.lower() && get(/databases/$(database)/documents/invitations/$(resource.data.invitationId)).data.status == 'pending' && get(/databases/$(database)/documents/invitations/$(resource.data.invitationId)).data.expiresAt > request.time));
+      allow create: if signed() && validCouple(request.resource.data,id) && request.resource.data.ownerId == uid() && request.resource.data.memberIds == [uid()] && request.resource.data.names[uid()] == get(/databases/$(database)/documents/users/$(uid())).data.name && request.resource.data.invitationId == null && request.resource.data.createdAt == request.time && get(/databases/$(database)/documents/users/$(uid())).data.coupleId == null && getAfter(/databases/$(database)/documents/users/$(uid())).data.coupleId == id;
+      allow update: if signed() && validCouple(request.resource.data,id) && request.resource.data.ownerId == resource.data.ownerId && request.resource.data.createdAt == resource.data.createdAt && (
+        (resource.data.ownerId == uid() && resource.data.memberIds.size()==1 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['invitationId','updatedAt']) && getAfter(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.coupleId == id && getAfter(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.ownerId == uid() && getAfter(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.status == 'pending') ||
+        (resource.data.memberIds.size()==1 && !(uid() in resource.data.memberIds) && request.resource.data.memberIds == resource.data.memberIds.concat([uid()]) && request.resource.data.invitationId == resource.data.invitationId && request.resource.data.names.diff(resource.data.names).affectedKeys().hasOnly([uid()]) && request.resource.data.names[uid()] == get(/databases/$(database)/documents/users/$(uid())).data.name && accept(resource.data,id))
+      );
+    }
+    match /invitations/{id} {
+      allow get: if signed() && (mine(resource.data) || (request.auth.token.email_verified == true && resource.data.recipientEmail == request.auth.token.email.lower()));
+      allow list: if false;
+      allow create: if signed() && request.resource.data.keys().hasOnly(['id','ownerId','coupleId','recipientEmail','status','acceptedBy','expiresAt','createdAt','updatedAt']) && id.matches('^[a-f0-9]{64}$') && identity(request.resource.data,id) && request.resource.data.createdAt == request.time && request.resource.data.status == 'pending' && request.resource.data.acceptedBy == null && text(request.resource.data.recipientEmail,254) && request.resource.data.recipientEmail.matches('^[^@]+@[^@]+[.][^@]+$') && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time && request.resource.data.expiresAt <= request.time + duration.value(49,'h') && get(/databases/$(database)/documents/couples/$(request.resource.data.coupleId)).data.ownerId == uid() && get(/databases/$(database)/documents/couples/$(request.resource.data.coupleId)).data.memberIds.size()==1 && getAfter(/databases/$(database)/documents/couples/$(request.resource.data.coupleId)).data.invitationId == id;
+      allow update: if signed() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','acceptedBy','updatedAt']) && request.resource.data.updatedAt == request.time && resource.data.status == 'pending' && request.resource.data.status == 'accepted' && request.resource.data.acceptedBy == uid() && get(/databases/$(database)/documents/couples/$(resource.data.coupleId)).data.invitationId == id && accept(get(/databases/$(database)/documents/couples/$(resource.data.coupleId)).data,resource.data.coupleId) && getAfter(/databases/$(database)/documents/couples/$(resource.data.coupleId)).data.memberIds == get(/databases/$(database)/documents/couples/$(resource.data.coupleId)).data.memberIds.concat([uid()]);
+    }
+    function goal(d) { return d.keys().hasOnly(['id','ownerId','coupleId','createdAt','updatedAt','title','category','frequency','target','duration','type','favorite','archived']) && text(d.title,120) && d.title.size()>0 && text(d.category,120) && d.frequency in ['daily','weekly','monthly'] && d.type in ['individual','shared','parallel'] && d.target is number && d.target>0 && d.target<=10000 && d.duration is number && d.duration>=0 && d.duration<=1440 && d.favorite is bool && d.archived is bool && ((d.type=='individual' && d.coupleId==null) || (d.type in ['shared','parallel'] && member(d.coupleId))); }
+    match /goals/{id} {
+      allow read: if mine(resource.data) || (resource.data.type in ['shared','parallel'] && member(resource.data.coupleId));
+      allow create: if signed() && identity(request.resource.data,id) && request.resource.data.createdAt==request.time && goal(request.resource.data);
+      allow update: if mine(resource.data) && unchanged() && request.resource.data.type==resource.data.type && timestamps(request.resource.data) && goal(request.resource.data);
+      allow delete: if mine(resource.data);
+    }
+    function logGoal(d) {
+      let g=get(/databases/$(database)/documents/goals/$(d.goalId)).data;
+      return d.title==g.title && d.category==g.category && !g.archived && (
+        (g.type=='individual' && g.ownerId==uid() && d.visibility=='private' && d.participants==[uid()]) ||
+        (g.type=='parallel' && member(g.coupleId) && d.visibility=='private' && d.participants.toSet().hasOnly(get(/databases/$(database)/documents/couples/$(g.coupleId)).data.memberIds)) ||
+        (g.type=='shared' && member(g.coupleId) && d.visibility=='couple' && d.coupleId==g.coupleId && d.participants.toSet()==get(/databases/$(database)/documents/couples/$(g.coupleId)).data.memberIds.toSet())
+      );
+    }
+    function activity(d) { return d.keys().hasOnly(['id','ownerId','coupleId','createdAt','updatedAt','goalId','title','category','date','amount','duration','notes','kind','details','visibility','participants']) && text(d.title,120) && d.title.size()>0 && text(d.notes,5000) && text(d.details,10000) && date(d.date) && d.amount is number && d.amount>0 && d.amount<=10000 && d.duration is number && d.duration>=0 && d.duration<=1440 && d.participants is list && d.participants.size()>=1 && d.participants.size()<=2 && d.participants.toSet().size()==d.participants.size() && uid() in d.participants && d.kind in ['activity','study','ministry'] && visibility(d) && ((d.kind=='ministry' && d.visibility=='private' && d.goalId=='' && d.category=='Ministério' && d.duration>0 && d.participants==[uid()]) || (d.kind in ['activity','study'] && logGoal(d))); }
+    match /activityLogs/{id} {
+      allow read: if readable(resource.data);
+      allow create: if signed() && identity(request.resource.data,id) && request.resource.data.createdAt==request.time && activity(request.resource.data);
+      allow delete: if mine(resource.data);
+    }
+    function simple(d,id) { return identity(d,id) && visibility(d) && text(d.title,120) && d.title.size()>0; }
+    function plan(d,id) {
+      let participants=d.get('participants',[d.ownerId]);
+      let end=d.get('endTime','');
+      return d.keys().hasOnly(['id','ownerId','coupleId','createdAt','updatedAt','title','date','time','endTime','category','participants','notes','visibility']) && simple(d,id) && date(d.date) && text(d.get('category','Outros'),120) && (d.time=='' || d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')) && (end=='' || (d.time!='' && end.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$') && end>d.time)) && text(d.notes,5000) && participants is list && participants.size()>=1 && participants.size()<=2 && participants.toSet().size()==participants.size() && ((d.visibility=='private' && participants==[uid()]) || (d.visibility=='couple' && participants.toSet().hasOnly(get(/databases/$(database)/documents/couples/$(d.coupleId)).data.memberIds)));
+    }
+    match /plans/{id} {
+      allow read: if readable(resource.data);
+      allow create: if signed() && plan(request.resource.data,id) && request.resource.data.createdAt==request.time;
+      allow update: if mine(resource.data) && request.resource.data.id==resource.data.id && request.resource.data.ownerId==resource.data.ownerId && request.resource.data.createdAt==resource.data.createdAt && plan(request.resource.data,id);
+      allow delete: if mine(resource.data);
+    }
+    function note(d,id) { return d.keys().hasOnly(['id','ownerId','coupleId','createdAt','updatedAt','title','text','kind','done','visibility']) && simple(d,id) && text(d.text,10000) && d.kind in ['note','shopping','meal','review','category'] && d.done is bool; }
+    match /sharedNotes/{id} {
+      allow read: if readable(resource.data);
+      allow create: if signed() && note(request.resource.data,id) && request.resource.data.createdAt==request.time;
+      allow update: if mine(resource.data) && unchanged() && request.resource.data.visibility==resource.data.visibility && note(request.resource.data,id);
+      allow delete: if mine(resource.data);
+    }
+    match /referenceLibrary/{id} {
+      allow read: if mine(resource.data);
+      allow create: if signed() && request.resource.data.keys().hasOnly(['ownerId','coupleId','title','url','category','description','habits','createdAt','updatedAt']) && mine(request.resource.data) && request.resource.data.coupleId==null && request.resource.data.createdAt==request.time && timestamps(request.resource.data) && text(request.resource.data.title,120) && text(request.resource.data.category,120) && text(request.resource.data.description,1000) && text(request.resource.data.habits,500) && request.resource.data.url is string && request.resource.data.url.matches('^https://(www[.])?jw[.]org/.*|^https://wol[.]jw[.]org/.*');
+      allow delete: if mine(resource.data);
+    }
+    function count(n,max) { return n is number && n>=0 && n<=max; }
+    function summary(d,id) { return d.keys().hasOnly(['id','ownerId','coupleId','date','weeklyProgress','bibleStreak','studies','exercises','ministryHours','createdAt','updatedAt']) && identity(d,id) && id==uid() && member(d.coupleId) && date(d.date) && count(d.weeklyProgress,100) && count(d.bibleStreak,100000) && count(d.studies,10000) && count(d.exercises,10000) && count(d.ministryHours,744); }
+    match /sharedSummaries/{id} {
+      allow read: if signed() && (id==uid() || member(resource.data.coupleId));
+      allow create: if signed() && summary(request.resource.data,id) && request.resource.data.createdAt==request.time;
+      allow update: if mine(resource.data) && unchanged() && summary(request.resource.data,id);
+      allow delete: if mine(resource.data);
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
