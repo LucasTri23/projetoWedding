@@ -1,4 +1,16 @@
 @import "tailwindcss";
+.study-guide-form {
+  margin-top: 24px;
+}
+.study-history {
+  margin-top: 30px;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar .sidebar-note {
+  flex-shrink: 0;
+}
 .cultiva-brand {
   display: inline-flex;
   align-items: center;
@@ -1038,6 +1050,12 @@ form {
   margin-top: 5px;
 }
 dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1757,5 +1775,129 @@ footer span {
   .report-filters input,
   .report-filters select {
     border: 0;
+  }
+}
+/* Responsive forms, dialogs and calendar controls. */
+.field,
+.panel,
+.goal-card,
+.page-heading > div,
+.section-heading > div {
+  min-width: 0;
+}
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+.modal-heading {
+  position: sticky;
+  top: -25px;
+  background: var(--surface);
+  z-index: 2;
+  padding: 12px 0;
+  margin-top: -12px;
+}
+.modal-heading h2 {
+  overflow-wrap: anywhere;
+  padding-right: 12px;
+}
+.modal-heading .icon-button {
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+}
+.recurring-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.recurrence-actions {
+  display: grid;
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .topbar {
+    padding-inline: 12px;
+  }
+  .toolbar {
+    align-items: stretch;
+  }
+  .toolbar > select,
+  .toolbar > input {
+    max-width: 100%;
+  }
+  .calendar-month {
+    flex: 1;
+    justify-content: space-between;
+  }
+  .calendar-legend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .section-heading {
+    flex-wrap: wrap;
+  }
+  dialog {
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 20px;
+    border-radius: 14px;
+  }
+  .modal-heading {
+    top: -20px;
+  }
+  .calendar-agenda .section-heading {
+    align-items: center;
+  }
+  .note-text,
+  .info,
+  .disclaimer {
+    overflow-wrap: anywhere;
+  }
+  .icon-button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+@media (max-width: 480px) {
+  .form-grid,
+  .report-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .toolbar > .button {
+    white-space: normal;
+  }
+  .topbar .button {
+    gap: 5px;
+    padding-inline: 9px;
+  }
+  .topbar-brand .cultiva-brand.compact > svg {
+    width: 24px;
+    height: 24px;
+  }
+  .topbar-brand .cultiva-brand.compact .cultiva-wordmark {
+    font-size: 20px;
+  }
+  .calendar-month b {
+    min-width: 120px;
+  }
+}
+@media (max-width: 380px) {
+  .topbar .button {
+    font-size: 0;
+    gap: 0;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 9px;
+  }
+  .topbar > div {
+    gap: 4px;
+  }
+  .topbar .button svg {
+    width: 19px;
+    height: 19px;
   }
 }

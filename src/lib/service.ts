@@ -13,6 +13,11 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { validatePlan } from "./calendar";
+import {
+  recurringDates,
+  futureOccurrences,
+  type RecurrenceFrequency,
+} from "./recurrence";
 import type { Activity, Goal, Note, Plan, Profile } from "./types";
 import {
   ministrySummary,
@@ -97,6 +102,36 @@ export async function saveProfile(uid: string, patch: Partial<Profile>) {
   });
 }
 type Input<T> = Omit<T, "id" | "createdAt" | "updatedAt">;
+export async function saveSchedule(
+  value: Input<Plan>,
+  frequency: RecurrenceFrequency,
+  end: string,
+  interval: number,
+) {
+  validatePlan(value);
+  if (frequency === "none") return saveRecord<Plan>("plans", value);
+  const dates = recurringDates(value.date, end, frequency, interval);
+  const series = `recurring:${frequency}:${interval}:${crypto.randomUUID()}:`;
+  const batch = writeBatch(database());
+  dates.forEach((date) => {
+    const id = series + date;
+    batch.set(doc(database(), "plans", id), {
+      ...value,
+      id,
+      date,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
+  await batch.commit();
+}
+export async function removeFutureSchedule(plan: Plan, plans: Plan[]) {
+  const batch = writeBatch(database());
+  futureOccurrences(plan, plans).forEach((p) =>
+    batch.delete(doc(database(), "plans", p.id)),
+  );
+  await batch.commit();
+}
 export async function saveRecord<T extends Goal | Activity | Plan | Note>(
   path: string,
   value: Input<T>,

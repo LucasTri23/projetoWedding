@@ -6,11 +6,22 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Repeat2,
 } from "lucide-react";
 import { useData } from "../lib/context";
-import { removeRecord, saveRecord } from "../lib/service";
+import {
+  removeRecord,
+  saveRecord,
+  saveSchedule,
+  removeFutureSchedule,
+} from "../lib/service";
 import { categories, type Plan } from "../lib/types";
-import { today } from "../lib/business";
+import { addDays, today } from "../lib/business";
+import {
+  futureOccurrences,
+  recurrenceInfo,
+  type RecurrenceFrequency,
+} from "../lib/recurrence";
 import { calendarDays, planParticipants, shiftMonth } from "../lib/calendar";
 import { Empty, Field, Heading, Modal } from "../components/ui";
 
@@ -43,29 +54,29 @@ function PlanEditor({
     initial ? planParticipants(initial) : [user!.uid],
   );
   const [busy, setBusy] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceFrequency>("none");
+  const [interval, setInterval] = useState(1);
+  const [repeatUntil, setRepeatUntil] = useState(() => addDays(initial?.date || date, 90));
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
-    const ok = await run(
-      () =>
-        saveRecord<Plan>(
-          "plans",
-          {
-            ownerId: user!.uid,
-            coupleId: shared ? profile!.coupleId : null,
-            title: title.trim(),
-            date: day,
-            time,
-            endTime,
-            category,
-            notes,
-            participants: shared ? participants : [user!.uid],
-            visibility: shared ? "couple" : "private",
-          },
-          initial?.id,
-        ),
-      "Programação salva no calendário.",
-    );
+    const ok = await run(() => {
+      const value = {
+        ownerId: user!.uid,
+        coupleId: shared ? profile!.coupleId : null,
+        title: title.trim(),
+        date: day,
+        time,
+        endTime,
+        category,
+        notes,
+        participants: shared ? participants : [user!.uid],
+        visibility: shared ? ("couple" as const) : ("private" as const),
+      };
+      return initial
+        ? saveRecord<Plan>("plans", value, initial.id)
+        : saveSchedule(value, frequency, repeatUntil, interval);
+    }, "Programação salva no calendário.");
     setBusy(false);
     if (ok) close();
   }
@@ -125,6 +136,64 @@ function PlanEditor({
             />
           </Field>
         </div>
+        {!initial && (
+          <>
+            <Field label="Repetir atividade">
+              <select
+                value={frequency}
+                onChange={(e) =>
+                  setFrequency(e.target.value as RecurrenceFrequency)
+                }
+              >
+                <option value="none">Não repetir — atividade única</option>
+                <option value="daily">Diariamente</option>
+                <option value="weekly">Semanalmente</option>
+                <option value="monthly">Mensalmente</option>
+              </select>
+            </Field>
+            {frequency !== "none" && (
+              <>
+                <div className="form-grid">
+                  <Field
+                    label={`A cada quantos ${frequency === "daily" ? "dias" : frequency === "weekly" ? "semanas" : "meses"}?`}
+                  >
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={interval}
+                      onChange={(e) => setInterval(Number(e.target.value))}
+                    />
+                  </Field>
+                  <Field label="Repetir até">
+                    <input
+                      required
+                      type="date"
+                      min={day}
+                      max={day ? addDays(day, 365) : undefined}
+                      value={repeatUntil}
+                      onChange={(e) => setRepeatUntil(e.target.value)}
+                    />
+                  </Field>
+                </div>
+                <p className="muted">
+                  A repetição começa no dia escolhido e termina na data
+                  indicada.
+                  {frequency === "monthly"
+                    ? " Em meses menores, usamos o último dia do mês."
+                    : ""}
+                </p>
+              </>
+            )}
+          </>
+        )}
+        {initial && recurrenceInfo(initial) && (
+          <div className="info">
+            Esta atividade faz parte de uma série recorrente. A edição altera
+            apenas esta ocorrência.
+          </div>
+        )}
         <label className="check-label">
           <input
             type="checkbox"
@@ -193,6 +262,8 @@ export function Calendar({
   const [participant, setParticipant] = useState("all");
   const [category, setCategory] = useState("Todas");
   const [edit, setEdit] = useState<Plan | true | null>(null);
+  const [deleting, setDeleting] = useState<Plan | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
   const events = plans.filter(
     (p) =>
       (!ministryOnly || p.category === "Ministério") &&
@@ -352,6 +423,11 @@ export function Calendar({
               <div className="calendar-entry" key={p.id}>
                 <span className="badge">{p.category || "Outros"}</span>
                 <h3>{p.title}</h3>
+                {recurrenceInfo(p) && (
+                  <span className="badge recurring-badge">
+                    <Repeat2 size={12} /> Recorrente
+                  </span>
+                )}
                 <b>
                   {p.time
                     ? `${p.time}${p.endTime ? ` – ${p.endTime}` : ""}`
@@ -384,10 +460,12 @@ export function Calendar({
                       className="icon-button danger"
                       aria-label={`Excluir ${p.title}`}
                       onClick={() =>
-                        run(
-                          () => removeRecord("plans", p.id),
-                          "Programação removida.",
-                        )
+                        recurrenceInfo(p)
+                          ? setDeleting(p)
+                          : run(
+                              () => removeRecord("plans", p.id),
+                              "Programação removida.",
+                            )
                       }
                     >
                       <Trash2 size={17} />
@@ -424,6 +502,53 @@ export function Calendar({
           ministry={ministryOnly}
           close={() => setEdit(null)}
         />
+      )}
+      {deleting && (
+        <Modal
+          title="Excluir atividade recorrente"
+          close={() => setDeleting(null)}
+        >
+          <p>
+            Escolha se deseja remover somente este dia ou também as próximas
+            ocorrências de “{deleting.title}”.
+          </p>
+          <div className="recurrence-actions">
+            <button
+              className="button secondary"
+              disabled={deletingBusy}
+              onClick={async () => {
+                setDeletingBusy(true);
+                if (
+                  await run(
+                    () => removeRecord("plans", deleting.id),
+                    "Ocorrência removida.",
+                  )
+                )
+                  setDeleting(null);
+                setDeletingBusy(false);
+              }}
+            >
+              Somente esta ocorrência
+            </button>
+            <button
+              className="button"
+              disabled={deletingBusy}
+              onClick={async () => {
+                setDeletingBusy(true);
+                if (
+                  await run(
+                    () => removeFutureSchedule(deleting, plans),
+                    "Esta ocorrência e as próximas foram removidas.",
+                  )
+                )
+                  setDeleting(null);
+                setDeletingBusy(false);
+              }}
+            >
+              Esta e as próximas ({futureOccurrences(deleting, plans).length})
+            </button>
+          </div>
+        </Modal>
       )}
     </section>
   );

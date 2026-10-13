@@ -73,8 +73,11 @@ Não inclua dados de terceiros em notas ministeriais. Use descrições genérica
 - Ministério individual: modalidade, metas configuráveis, horas, restante, projeção, histórico mensal e meta anual opcional.
 - Agenda flexível e caderno com compras, refeições, conversas e revisão mensal.
 - Calendário mensal compartilhado com início/término, participantes, filtros e edição. O módulo Ministério mostra esse mesmo calendário filtrado por categoria; programar não soma horas automaticamente.
+- Agendamentos únicos ou recorrentes (diários, semanais ou mensais), com intervalo e data final de até um ano. Meses menores usam o último dia sem perder o dia original nas ocorrências seguintes. É possível editar uma ocorrência ou excluir esta e as futuras. Cada data fica em um documento `plans`; o identificador contém a chave da série, sem campos adicionais de autorização. A criação da série usa um lote atômico.
 - Hábitos livres com categorias Saúde, Financeiro ou uma categoria personalizada diretamente no formulário.
 - Biblioteca com seis referências verificadas em 13/10/2026 e links oficiais personalizados.
+- Aba Leitura da Bíblia aparece com uma meta diária ativa cujo nome contém Bíblia/bíblica (ex.: Leitura diária da Bíblia). Leitura livre ou sequencial, 66 livros, escolha de capítulo, links oficiais para leitura/áudio e registro manual. Metas paralelas mantêm registros individuais; metas compartilhadas registram uma leitura conjunta.
+- Adoração em família oferece cinco temas com sínteses breves e perguntas originais. Os roteiros podem ser usados individualmente (notas privadas) ou em conjunto (notas compartilhadas). As anotações são guardadas no caderno. Os artigos completos e os players de áudio permanecem no jw.org; não há cópia, extração automática ou player incorporado.
 - Relatórios por período/categoria/participante, evolução semanal/mensal, histórico e exclusão de registros. Exportação JSON dos dados disponíveis ao usuário e PDF via impressão do navegador.
 - Layout responsivo, navegação inferior, modo escuro, diálogos nativos com foco contido, feedback e estados vazios.
 

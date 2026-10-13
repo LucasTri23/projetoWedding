@@ -5,6 +5,7 @@ import { references } from "../lib/references";
 import { database, saveReference } from "../lib/service";
 import { useData } from "../lib/context";
 import { Field, Heading, Modal } from "../components/ui";
+import { studyTopics } from "../lib/studyTopics";
 type Reference = (typeof references)[number];
 export function Library() {
   const { user, run, notify } = useData();
@@ -39,6 +40,7 @@ export function Library() {
     "Casamento",
     "Saúde",
     "Administração do tempo",
+    "Financeiro",
   ];
   return (
     <>
@@ -73,7 +75,24 @@ export function Library() {
         </select>
       </div>
       <div className="goal-grid">
-        {[...references, ...custom]
+        {[
+          ...references,
+          ...studyTopics
+            .filter((t) => !references.some((r) => r.url === t.url))
+            .map((t) => ({
+              title: t.sourceTitle,
+              url: t.url,
+              category:
+                t.category === "Financeiro"
+                  ? "Financeiro"
+                  : t.category === "Espiritualidade"
+                    ? "Adoração em família"
+                    : "Casamento",
+              description: t.summary,
+              habits: t.title,
+            })),
+          ...custom,
+        ]
           .filter(
             (r) =>
               (category === "Todas" || r.category === category) &&

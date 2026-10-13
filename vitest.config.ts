@@ -7,6 +7,8 @@ export default defineConfig({
           "tests/business.test.ts",
           "tests/deployment.test.ts",
           "tests/calendar.test.ts",
+          "tests/recurrence.test.ts",
+          "tests/bible.test.ts",
         ],
     environment: "node",
     testTimeout: 15000,

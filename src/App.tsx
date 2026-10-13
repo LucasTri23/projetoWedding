@@ -14,6 +14,7 @@ import {
   Sun,
   WifiOff,
   Menu,
+  Heart,
 } from "lucide-react";
 import { useData } from "./lib/context";
 import { saveProfile } from "./lib/service";
@@ -29,12 +30,16 @@ import { signOut } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import { Modal } from "./components/ui";
 import { Brand } from "./components/Brand";
-const links = [
+import { dailyBibleGoals } from "./lib/bible";
+import { BibleReading } from "./features/BibleReading";
+import { FamilyWorship } from "./features/FamilyWorship";
+const baseLinks = [
   { to: "/", label: "Visão geral", icon: LayoutDashboard },
   { to: "/habitos", label: "Hábitos & metas", icon: Sprout },
   { to: "/planejamento", label: "Planejamento", icon: CalendarDays },
   { to: "/ministerio", label: "Ministério", icon: HeartHandshake },
   { to: "/biblioteca", label: "Biblioteca espiritual", icon: BookOpen },
+  { to: "/adoracao", label: "Adoração em família", icon: Heart },
   { to: "/relatorios", label: "Nossa evolução", icon: ChartNoAxesCombined },
   { to: "/caderno", label: "Nosso caderno", icon: NotebookPen },
 ];
@@ -45,7 +50,14 @@ const Reports = lazy(() =>
   import("./features/Reports").then((m) => ({ default: m.Reports })),
 );
 export default function App() {
-  const { user, profile, loading, error, run, retry } = useData();
+  const { user, profile, goals, loading, error, run, retry } = useData();
+  const links = [...baseLinks];
+  if (dailyBibleGoals(goals).length)
+    links.splice(4, 0, {
+      to: "/leitura-biblia",
+      label: "Leitura da Bíblia",
+      icon: BookOpen,
+    });
   const [record, setRecord] = useState(false);
   const [menu, setMenu] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
@@ -223,6 +235,8 @@ export default function App() {
                 <Route path="/planejamento" element={<Planning />} />
                 <Route path="/ministerio" element={<Ministry />} />
                 <Route path="/biblioteca" element={<Library />} />
+                <Route path="/leitura-biblia" element={<BibleReading />} />
+                <Route path="/adoracao" element={<FamilyWorship />} />
                 <Route path="/relatorios" element={<Reports />} />
                 <Route path="/caderno" element={<Notes />} />
                 <Route path="/perfil" element={<Profile />} />
