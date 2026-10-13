@@ -108,7 +108,7 @@ Verifique manualmente criação de conta, login/logout, recuperação de senha, 
 
 1. Envie o projeto para seu repositório e use a branch `main`.
 2. Settings → Pages → Source: **GitHub Actions**.
-3. Settings → Secrets and variables → Actions → **Variables**: defina todos os campos públicos `VITE_FIREBASE_*` do `.env.example` e `VITE_APP_CHECK_SITE_KEY` se utilizado.
+3. Settings → Secrets and variables → Actions → **Secrets** ou **Variables**: defina todos os campos públicos `VITE_FIREBASE_*` do `.env.example` e `VITE_APP_CHECK_SITE_KEY` se utilizado. O workflow aceita ambos e prioriza Secrets quando o mesmo nome existe nas duas abas. Mesmo armazenada como Secret, a configuração pública Firebase fica visível no aplicativo compilado.
 4. Faça push. `.github/workflows/pages.yml` instala, valida, testa regras, gera build e publica `dist`.
 
 Vite detecta `GITHUB_REPOSITORY`: repositório `metas` gera base `/metas/`; repositório `usuario.github.io` gera `/`. Para build manual de repositório de projeto, defina `PAGES_BASE_PATH=/metas/`. Para domínio próprio, configure `PAGES_BASE_PATH=/` no passo de build e um arquivo `public/CNAME`. Rotas usam hash (`#/habitos`), evitando 404 na atualização. Não adicione configuração de Hosting Firebase.
