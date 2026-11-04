@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { auth, db } from "./firebase";
 import type { Activity, Couple, Goal, Note, Plan, Profile } from "./types";
 import { errorMessage } from "./errors";
+import { applyTheme, storedTheme } from "./theme";
 interface Data {
   user: User | null;
   profile: Profile | null;
@@ -167,8 +168,7 @@ export function Provider({ children }: { children: ReactNode }) {
     return () => stops.forEach((stop) => stop());
   }, [user, profileReady, coupleId, coupleReady, revision, report]);
   useEffect(() => {
-    document.documentElement.dataset.theme =
-      profile?.theme || localStorage.getItem("theme") || "light";
+    applyTheme(profile?.theme || storedTheme());
   }, [profile?.theme]);
   useEffect(() => {
     if (!toast) return;

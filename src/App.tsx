@@ -20,7 +20,8 @@ import { useData } from "./lib/context";
 import { saveProfile } from "./lib/service";
 import { Auth } from "./features/Auth";
 import { Goals, ActivityEditor } from "./features/Goals";
-import { Planning } from "./features/Planning";
+import { Calendar } from "./features/Calendar";
+import { WeeklyPlanner } from "./features/WeeklyPlanner";
 import { Ministry } from "./features/Ministry";
 import { Library } from "./features/Library";
 import { Profile } from "./features/Profile";
@@ -33,10 +34,13 @@ import { Brand } from "./components/Brand";
 import { dailyBibleGoals } from "./lib/bible";
 import { BibleReading } from "./features/BibleReading";
 import { FamilyWorship } from "./features/FamilyWorship";
+import { applyTheme } from "./lib/theme";
 const baseLinks = [
-  { to: "/", label: "Visão geral", icon: LayoutDashboard },
+  { to: "/", label: "Home", icon: LayoutDashboard },
+  { to: "/planejamento", label: "Programação de campo", icon: HeartHandshake },
+  { to: "/calendario", label: "Calendário", icon: CalendarDays },
+  { to: "/saude", label: "Saúde", icon: Heart },
   { to: "/habitos", label: "Hábitos & metas", icon: Sprout },
-  { to: "/planejamento", label: "Planejamento", icon: CalendarDays },
   { to: "/ministerio", label: "Ministério", icon: HeartHandshake },
   { to: "/biblioteca", label: "Biblioteca espiritual", icon: BookOpen },
   { to: "/adoracao", label: "Adoração em família", icon: Heart },
@@ -44,7 +48,7 @@ const baseLinks = [
   { to: "/caderno", label: "Nosso caderno", icon: NotebookPen },
 ];
 const Dashboard = lazy(() =>
-  import("./features/Dashboard").then((m) => ({ default: m.Dashboard })),
+  import("./features/Home").then((m) => ({ default: m.Home })),
 );
 const Reports = lazy(() =>
   import("./features/Reports").then((m) => ({ default: m.Reports })),
@@ -168,15 +172,16 @@ export default function App() {
             </NavLink>
             <div>
               <button
-                className="icon-button"
+                className="icon-button theme-toggle"
                 aria-label={dark ? "Ativar modo claro" : "Ativar modo escuro"}
-                onClick={() =>
-                  run(() =>
-                    saveProfile(user.uid, { theme: dark ? "light" : "dark" }),
-                  )
-                }
+                title={dark ? "Modo claro" : "Modo escuro"}
+                onClick={() => {
+                  const next = dark ? "light" : "dark";
+                  applyTheme(next, true);
+                  void run(() => saveProfile(user.uid, { theme: next }));
+                }}
               >
-                {dark ? <Sun size={20} /> : <Moon size={20} />}
+                {dark ? <Sun key="sun" size={20} /> : <Moon key="moon" size={20} />}
               </button>
               <button className="button small" onClick={() => setRecord(true)}>
                 <Plus size={17} /> Registrar atividade
@@ -232,7 +237,9 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/habitos" element={<Goals />} />
-                <Route path="/planejamento" element={<Planning />} />
+                <Route path="/planejamento" element={<WeeklyPlanner />} />
+                <Route path="/calendario" element={<Calendar />} />
+                <Route path="/saude" element={<WeeklyPlanner health />} />
                 <Route path="/ministerio" element={<Ministry />} />
                 <Route path="/biblioteca" element={<Library />} />
                 <Route path="/leitura-biblia" element={<BibleReading />} />
@@ -251,7 +258,7 @@ export default function App() {
         </div>
         <nav className="bottom-nav" aria-label="Navegação no celular">
           {[
-            ...links.slice(0, 3),
+            ...links.filter((l) => ["/", "/planejamento", "/calendario"].includes(l.to)),
             { to: "/perfil", label: "Perfil", icon: UserRound },
           ].map(({ to, label, icon: Icon }) => (
             <NavLink end={to === "/"} to={to} key={to}>

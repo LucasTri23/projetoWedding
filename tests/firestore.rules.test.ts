@@ -337,6 +337,12 @@ describe("fronteiras de segurança", () => {
       updatedAt: serverTimestamp(),
     };
     await assertSucceeds(setDoc(doc(ctx("alice"), "plans", "agenda"), agenda));
+    const weekly = { ...agenda, id: "weekly", date: "", weekday: 0, duration: 120 };
+    await assertSucceeds(setDoc(doc(ctx("alice"), "plans", "weekly"), weekly));
+    await assertSucceeds(getDoc(doc(ctx("bob"), "plans", "weekly")));
+    await assertFails(updateDoc(doc(ctx("bob"), "plans", "weekly"), { duration: 60, updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(ctx("alice"), "plans", "weekly"), { weekday: 7, updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(ctx("alice"), "plans", "weekly"), { duration: 0, updatedAt: serverTimestamp() }));
     await assertSucceeds(getDoc(doc(ctx("bob"), "plans", "agenda")));
     await assertSucceeds(
       updateDoc(doc(ctx("alice"), "plans", "agenda"), {

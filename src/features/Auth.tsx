@@ -6,7 +6,8 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { ArrowRight, Leaf, ShieldCheck } from "lucide-react";
+import { ArrowRight, Leaf, Moon, ShieldCheck, Sun } from "lucide-react";
+import { applyTheme, storedTheme, type Theme } from "../lib/theme";
 import { auth, configured } from "../lib/firebase";
 import { ensureProfile } from "../lib/service";
 import { useData } from "../lib/context";
@@ -19,6 +20,7 @@ export function Auth() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const { run } = useData();
+  const [theme, setTheme] = useState<Theme>(storedTheme);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!auth) return;
@@ -91,6 +93,18 @@ export function Auth() {
         <small>Construindo hoje o que queremos viver amanhã.</small>
       </section>
       <section className="auth-form">
+        <button
+          type="button"
+          className="icon-button theme-toggle auth-theme"
+          aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+          onClick={() => {
+            const next = theme === "dark" ? "light" : "dark";
+            applyTheme(next, true);
+            setTheme(next);
+          }}
+        >
+          {theme === "dark" ? <Sun key="sun" size={20} /> : <Moon key="moon" size={20} />}
+        </button>
         <div className="auth-card">
           <span className="eyebrow">CULTIVA</span>
           <h2>

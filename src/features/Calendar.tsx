@@ -22,7 +22,7 @@ import {
   recurrenceInfo,
   type RecurrenceFrequency,
 } from "../lib/recurrence";
-import { calendarDays, planParticipants, shiftMonth } from "../lib/calendar";
+import { calendarDays, expandPlans, planParticipants, shiftMonth } from "../lib/calendar";
 import { Empty, Field, Heading, Modal } from "../components/ui";
 
 function PlanEditor({
@@ -264,7 +264,7 @@ export function Calendar({
   const [edit, setEdit] = useState<Plan | true | null>(null);
   const [deleting, setDeleting] = useState<Plan | null>(null);
   const [deletingBusy, setDeletingBusy] = useState(false);
-  const events = plans.filter(
+  const events = expandPlans(plans, [...new Set([...calendarDays(month), selected])]).filter(
     (p) =>
       (!ministryOnly || p.category === "Ministério") &&
       (category === "Todas" || p.category === category) &&
@@ -294,8 +294,8 @@ export function Calendar({
       ) : (
         <Heading
           eyebrow="ESCOLHAM O DIA, PRESERVEM O RITMO"
-          title="Calendário & planejamento"
-          description="Visualize a sua programação e a do seu par. Os agendamentos são opcionais."
+          title="Calendário do casal"
+          description="A rotina semanal aparece automaticamente aqui. Acrescente eventos para um de vocês ou para os dois."
           action={
             <button className="button" onClick={open}>
               <Plus size={18} /> Agendar atividade
@@ -423,7 +423,7 @@ export function Calendar({
               <div className="calendar-entry" key={p.id}>
                 <span className="badge">{p.category || "Outros"}</span>
                 <h3>{p.title}</h3>
-                {recurrenceInfo(p) && (
+                {(recurrenceInfo(p) || p.weekday !== undefined) && (
                   <span className="badge recurring-badge">
                     <Repeat2 size={12} /> Recorrente
                   </span>
@@ -447,8 +447,10 @@ export function Calendar({
                     ? "Visível para o casal"
                     : "Somente você"}
                 </small>
+                {p.duration && <p>{p.duration / 60} h planejadas</p>}
                 {p.notes && <p className="note-text">{p.notes}</p>}
-                {p.ownerId === user!.uid && (
+                {p.weekday !== undefined && <a className="text-link" href={p.category === "Ministério" ? "#/planejamento" : p.category === "Saúde" ? "#/saude" : "#/adoracao"}>Editar na rotina semanal →</a>}
+                {p.ownerId === user!.uid && p.weekday === undefined && (
                   <div className="inline-actions">
                     <button
                       className="button secondary small"

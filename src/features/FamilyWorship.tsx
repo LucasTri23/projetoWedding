@@ -2,7 +2,10 @@ import { useState } from "react";
 import { ArrowUpRight, BookOpen, Check, Heart } from "lucide-react";
 import { useData } from "../lib/context";
 import { studyTopics } from "../lib/studyTopics";
-import { saveRecord } from "../lib/service";
+import { RoutineEditor } from "./WeeklyPlanner";
+import { weekdays } from "../lib/calendar";
+import type { Plan } from "../lib/types";
+import { removeRecord, saveRecord } from "../lib/service";
 import type { Note } from "../lib/types";
 import { today } from "../lib/business";
 import { Field, Heading, Modal } from "../components/ui";
@@ -110,7 +113,8 @@ function StudyGuide({ topic, close }: { topic: Topic; close: () => void }) {
   );
 }
 export function FamilyWorship() {
-  const { notes, goals, couple } = useData();
+  const { notes, goals, couple, plans, user, run } = useData();
+  const [routine, setRoutine] = useState<Plan | true | null>(null);
   const [readingGoal, setReadingGoal] = useState(false);
   const [topic, setTopic] = useState<Topic | null>(null);
   const recent = notes
@@ -140,6 +144,13 @@ export function FamilyWorship() {
           )
         }
       />
+      <article className="panel worship-planner">
+        <div className="section-heading"><div><span className="eyebrow">UM MOMENTO TODA SEMANA</span><h2>Nossa adoração semanal</h2></div><button className="button" onClick={() => setRoutine(true)}>Planejar adoração</button></div>
+        <p className="muted">Escolham o dia, o tema e o tempo disponível. A rotina aparece no calendário do casal.</p>
+        {plans.filter((p) => p.weekday !== undefined && p.category === "Espiritualidade").map((p) => <div className="list-row" key={p.id}><div><b>{p.title}</b><p>{weekdays[p.weekday!]} · {p.time || "Horário livre"} · {(p.duration || 0) / 60} h</p>{p.notes && <p>{p.notes}</p>}</div>{p.ownerId === user!.uid && <div className="inline-actions"><button className="button secondary small" onClick={() => setRoutine(p)}>Editar</button><button className="button secondary small" onClick={() => run(() => removeRecord("plans", p.id), "Rotina removida.")}>Excluir</button></div>}</div>)}
+      </article>
+      <article className="panel study-history"><h2>Ideias para variar a semana</h2><p>Escolham entre leitura bíblica, preparação das reuniões, apresentações de campo e vídeos para conversar juntos.</p><a className="text-link" target="_blank" rel="noreferrer" href="https://wol.jw.org/pt/wol/d/r5/lp-t/2024247">Ideias para estudo e adoração no jw.org ↗</a></article>
+      {routine && <RoutineEditor category="Espiritualidade" initial={routine === true ? undefined : routine} close={() => setRoutine(null)} />}
       <div className="info">
         <Heart size={19} /> Estes roteiros do Cultiva são resumos breves e
         perguntas originais inspiradas nas referências. O artigo completo

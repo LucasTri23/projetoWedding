@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "./lib/context";
 import App from "./App";
 import "./styles.css";
+import "./refresh.css";
 import "./lib/pwa";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

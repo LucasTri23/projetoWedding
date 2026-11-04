@@ -15,6 +15,12 @@ export function shiftMonth(month: string, offset: number) {
 export function planParticipants(plan: Plan): string[] {
   return plan.participants || [plan.ownerId];
 }
+export const weekdays = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+export function expandPlans(plans: Plan[], days: string[]): Plan[] {
+  return plans.flatMap((plan) => plan.weekday === undefined ? [plan] : days
+    .filter((day) => (new Date(`${day}T12:00:00Z`).getUTCDay() + 6) % 7 === plan.weekday)
+    .map((date) => ({ ...plan, date })));
+}
 export function validatePlan(
   plan: Pick<
     Plan,
@@ -25,14 +31,18 @@ export function validatePlan(
     | "participants"
     | "visibility"
     | "ownerId"
+    | "weekday"
+    | "duration"
   >,
 ) {
   if (!plan.title.trim() || plan.title.length > 120)
     throw new Error("Informe o nome da atividade, até 120 caracteres.");
-  if (
+  if (plan.weekday !== undefined && (!Number.isInteger(plan.weekday) || plan.weekday < 0 || plan.weekday > 6 || plan.date !== "" || !Number.isFinite(plan.duration) || plan.duration! <= 0 || plan.duration! > 1440))
+    throw new Error("Informe um dia da semana e uma duração válida.");
+  if (plan.weekday === undefined && (
     !/^\d{4}-\d{2}-\d{2}$/.test(plan.date) ||
     new Date(`${plan.date}T12:00:00Z`).toISOString().slice(0, 10) !== plan.date
-  )
+  ))
     throw new Error("Escolha uma data válida.");
   const validTime = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
   if (plan.time && !validTime(plan.time))

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calendarDays,
+  expandPlans,
   planParticipants,
   shiftMonth,
   validatePlan,
@@ -16,6 +17,15 @@ const plan = {
   visibility: "private",
 } as Plan;
 describe("calendário e programação", () => {
+  it("projeta a rotina semanal nas datas sem duplicar eventos únicos", () => {
+    const routine = { ...plan, id: "routine", date: "", weekday: 0, duration: 90 };
+    expect(() => validatePlan(routine)).not.toThrow();
+    const events = expandPlans([routine, plan], ["2026-11-02", "2026-11-03", "2026-11-09"]);
+    expect(events.map((p) => p.date)).toEqual(["2026-11-02", "2026-11-09", plan.date]);
+    expect(routine.date).toBe("");
+    expect(() => validatePlan({ ...routine, weekday: 7 })).toThrow();
+    expect(() => validatePlan({ ...routine, duration: 0 })).toThrow();
+  });
   it("começa na segunda e cobre seis semanas", () => {
     const days = calendarDays("2026-10");
     expect(days).toHaveLength(42);

@@ -2,7 +2,9 @@
 
 Crescer, juntos. Identidade com duas folhas conectadas, disponível em `public/logo.svg`; o símbolo também aparece na interface e nos ícones da PWA.
 
-Aplicação estática React + TypeScript para hábitos pessoais e compartilhados. Metas definem quantidade e periodicidade; agenda opcional define intenção de data; registros guardam o que aconteceu. Nenhuma atividade é distribuída automaticamente pela semana.
+Planner do casal em React + TypeScript. A Home reúne os próximos sete dias. Programação de campo, Saúde e Adoração em família permitem criar rotinas semanais sem data fixa, projetadas automaticamente no calendário. Eventos avulsos continuam disponíveis, com visibilidade e participantes independentes. Metas e registros acompanham o que foi realizado.
+
+As rotinas usam documentos de `plans` com `weekday` (0 = segunda, 6 = domingo), `duration` em minutos e `date` vazia. A projeção acontece na leitura, sem criar cópias no banco. Alterar ou excluir uma rotina atualiza sua projeção em todo o calendário; use registros de atividade para preservar o histórico realizado. Publique as regras atualizadas antes de usar as novas rotinas em produção.
 
 ## Desenvolvimento
 

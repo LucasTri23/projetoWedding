@@ -32,6 +32,8 @@ export interface Activity extends RecordBase {
   participants: string[];
 }
 export interface Plan extends RecordBase {
+  weekday?: number;
+  duration?: number;
   title: string;
   date: string;
   time: string;
