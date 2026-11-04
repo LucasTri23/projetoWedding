@@ -1113,3 +1113,20 @@ dialog::backdrop {
 footer {
   opacity: 0.85;
 }
+
+/* Toast como popover: limpa os estilos padrão do navegador. */
+.toast[popover] {
+  inset: auto auto 30px 50%;
+  margin: 0;
+  border: 0;
+  overflow: visible;
+  height: auto;
+}
+.toast[popover]:not(:popover-open) {
+  display: flex;
+}
+@media (max-width: 760px) {
+  .toast[popover] {
+    bottom: 96px;
+  }
+}

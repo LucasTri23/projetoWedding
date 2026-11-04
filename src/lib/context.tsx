@@ -3,6 +3,7 @@
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
@@ -211,15 +212,28 @@ export function Provider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {toast && (
-        <div className="toast" role="status">
-          {toast}
-          <button aria-label="Fechar mensagem" onClick={() => setToast("")}>
-            ×
-          </button>
-        </div>
-      )}
+      {toast && <Toast message={toast} close={() => setToast("")} />}
     </Context.Provider>
+  );
+}
+// Rendered as a popover so it sits in the top layer, above open <dialog>s.
+function Toast({ message, close }: { message: string; close: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    try {
+      el?.showPopover?.();
+    } catch {
+      /* popover unsupported: falls back to fixed positioning */
+    }
+  }, [message]);
+  return (
+    <div ref={ref} className="toast" role="status" popover="manual">
+      {message}
+      <button aria-label="Fechar mensagem" onClick={close}>
+        ×
+      </button>
+    </div>
   );
 }
 export function useData() {
